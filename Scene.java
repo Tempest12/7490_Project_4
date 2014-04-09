@@ -183,14 +183,18 @@ public class Scene
 	public Color4f shade(Intersectable object, Ray3f ray, float time)
 	{
 		Collision collision = null;
+		Collision reflectionCollision = null;
 		Ray3f shadowRay = null;
+		Ray3f reflectedRay = new Ray3f();
 		Color4f color = new Color4f(object.surface.ambient);
 		Color4f addedLight = null;
+		Color4f reflectionColor = null;
 		PointLight light;
 
 		float partial = 0.0f;
 		float specularPartial = 0.0f;
 		
+		Vector3f reflectionAxis = new Vector3f();
 		Vector3f intersectionPoint = ray.computeLocationAtTime(time);
 		Vector3f directionToLight = new Vector3f();
 		Vector3f directionFromLight = new Vector3f();
@@ -241,6 +245,31 @@ public class Scene
 				    addedLight.scale(specularPartial);
 				    
 				    color.add(addedLight);
+				    
+				    if(object.surface.kRefl > 0.0)
+				    {
+				        //Calculate the direction of the reflected ray.
+				        reflectedRay.origin.copy(intersectionPoint);
+				        
+				        float reflectPartial = 2.0f * normal.dotProduct(inverseDirection);
+				        reflectionAxis.copy(normal);
+				        reflectionAxis.scale(reflectPartial);
+				        reflectionAxis.add(ray.direction);
+				        reflectionAxis.normalize();
+				        
+				        reflectedRay.direction.copy(reflectionAxis);
+				        
+				        reflectionCollision = checkCollisions(reflectedRay, object);
+				        
+				        if(reflectionCollision != null)
+				        {
+				            reflectionColor = this.shade(reflectionCollision.object, reflectedRay, reflectionCollision.time);
+				            reflectionColor.scale(object.surface.kRefl);
+				            
+				            color.add(reflectionColor);
+				        }
+				        
+				    }
 				}				
 			}
 			else 
@@ -257,4 +286,7 @@ public class Scene
 	{
 		return "";
 	}
+	
+	//Static stuff useful for debugging and not much else currently:
+	public static Color4f color_white = new Color4f(1.0f);
 }
