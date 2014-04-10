@@ -20,6 +20,8 @@ public class Scene
 	public float k;
 
 	public int idCounter;
+	
+	public String currentTexture;
 
 	public Scene(int width, int height)
 	{
@@ -45,6 +47,12 @@ public class Scene
 	{
 		this.objects.add(new Face3f(idCounter, one, two, three, lastSurface));
 		this.idCounter++;
+	}
+	
+	public void addFace3f(Vector3f one, Vector3f two, Vector3f three, float[] texCoordOne, float[] texCoordTwo, float[] texCoordThree)
+	{
+	    this.objects.add(new Face3f(idCounter, one, two, three, lastSurface, currentTexture, texCoordOne, texCoordTwo, texCoordThree));
+	    this.idCounter++;
 	}
 
 	public void addPointLight(float x, float y, float z, float red, float green, float blue)
@@ -112,12 +120,12 @@ public class Scene
 
 		ray.normalize();
 
-  if(x == 34 && y == 34)
-  {
-     System.out.println(ray.direction.toString());
-	 
-	 System.out.println(k);
-  }
+          if(x == 34 && y == 34)
+          {
+             System.out.println(ray.direction.toString());
+	         
+	         System.out.println(k);
+          }
 	}
 
 	public Color4f[][] render()
@@ -223,7 +231,7 @@ public class Scene
 				
 				partial = Math.max(0.0f, normal.dotProduct(directionToLight));
 				
-				addedLight = Color4f.multiplyColors(light.color, object.surface.diffuse);
+				addedLight = Color4f.multiplyColors(light.diffuseColor, object.surface.diffuse);
 				addedLight.scale(partial);
 				
 				color.add(addedLight);
@@ -241,7 +249,7 @@ public class Scene
 				    specularPartial = Math.max(0, normal.dotProduct(specularRay));
 				    specularPartial = (float)Math.pow(specularPartial, object.surface.phongExp);
 				    
-				    addedLight = Color4f.multiplyColors(object.surface.specular, light.color);
+				    addedLight = Color4f.multiplyColors(object.surface.specular, light.diffuseColor);
 				    addedLight.scale(specularPartial);
 				    
 				    color.add(addedLight);
@@ -281,6 +289,11 @@ public class Scene
 		
 		return color;
 	}
+
+    public void setTexture(String textureName)
+    {
+        this.currentTexture = new String(textureName);
+    }
 
 	public String toString()
 	{

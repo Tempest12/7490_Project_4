@@ -5,9 +5,12 @@ class ImageTexture {
   PImage image;
   PImage[] image_pyramid;
   int levels;  // number of pyramid levels
+  String fileName;
   
   ImageTexture (String filename) {
     int i;
+    
+    this.fileName = new String(filename);
     
     image = loadImage (filename);  // read in a texture
     

@@ -14,6 +14,12 @@ public class Face3f extends Intersectable
     public Vector3f edgeTwo;
 	public Vector3f edgeThree;
 	
+	public float[] texCoordOne;
+	public float[] texCoordTwo;
+	public float[] texCoordThree;
+	
+	public float area;
+	
     /**
      * Constructor for the Face3f class. Takes in 3 indices for it's vertex list, and a reference to the vertex list
      * @param vOne int -> index for the vertex list for the 1st vertex
@@ -44,12 +50,35 @@ public class Face3f extends Intersectable
 		this.edgeTwo.subtract(this.vTwo);
 		
 		this.edgeThree = new Vector3f(vOne);
-		this.edgeThree.subtract(this.vThree);
+		this.edgeThree.subtract(this.vThree);	
 		
-		
-		
+		this.textured = false;	
     }
       
+    public Face3f(int id, Vector3f vOne, Vector3f vTwo, Vector3f vThree, Surface surface, String textureName, float[] texCoordOne, float[] texCoordTwo, float[] texCoordThree)
+    {
+        this(id, vOne, vTwo, vThree, surface);
+        
+        this.textured = true;
+        this.textureName = textureName;
+        
+        this.texCoordOne = texCoordOne;
+        this.texCoordTwo = texCoordTwo;
+        this.texCoordThree = texCoordThree;    
+        
+        //Calculate Area:
+        Vector3f oneToTwo = new Vector3f(this.vTwo);
+        Vector3f oneToThree = new Vector3f(this.vThree);
+        
+        oneToTwo.subtract(this.vOne);
+        oneToThree.subtract(this.vOne);
+        
+        oneToTwo.crossProduct(oneToThree);
+        area = oneToTwo.magnitude() / 2.0f;
+        
+        System.out.println("Area: " + area);
+    }
+    
     /**
      * Computes the time of intersection with the given ray. returns -1.0f if no intersection will occur, Also takes in a variable fudge factor
      * @param ray Ray3f -> Ray we are testing for
@@ -78,10 +107,10 @@ public class Face3f extends Intersectable
             //If so return the time.
             return time;
         }
-        /*else if(insideOne < 0.0f && insideTwo < 0.0f && insideThree < 0.0f)
+        else if(insideOne <= fudge * -1.0f && insideTwo <= fudge * -1.0f && insideThree <= fudge * -1.0f)
 		{
 			return time;
-		}*/
+		}
 		else
         {    
             //Return a negative number otherwise.
@@ -107,5 +136,51 @@ public class Face3f extends Intersectable
 		hey.scale(-1.0f);
 		
 		return hey;
+	}
+	
+	public float[] findUV(Vector3f point)
+	{
+	    float[] uv = new float[2];
+	    
+	    float a;
+	    float b;
+	    float c;
+	    
+	    //A = one
+	    //B = two
+	    //C = three
+	    Vector3f edge = new Vector3f();;
+	    Vector3f pointToOne = new Vector3f(point);
+	    Vector3f pointToTwo = new Vector3f(point);
+	    Vector3f pointToThree = new Vector3f(point);
+	    
+	    pointToOne.subtract(this.vOne);
+	    pointToTwo.subtract(this.vTwo);
+	    pointToThree.subtract(this.vThree);
+	    
+	    edge.copy(vThree);
+	    edge.subtract(vTwo);
+	    edge.crossProduct(pointToTwo);
+	    a = edge.magnitude() / 2.0f;
+	    
+	    edge.copy(vOne);
+	    edge.subtract(vThree);
+	    edge.crossProduct(pointToThree);
+	    b = edge.magnitude() / 2.0f;
+	    
+	    edge.copy(vTwo);
+	    edge.subtract(vOne);
+	    edge.crossProduct(pointToOne);
+	    c = edge.magnitude() / 2.0f;
+	    
+	    a /= this.area;
+	    b /= this.area;
+	    c /= this.area;
+	    
+	    //Multiply the ratios time the actual texture coordinates:
+	    uv[0] = a * this.texCoordOne[0] + b * this.texCoordTwo[0]  + c * this.texCoordThree[0];
+	    uv[1] = a * this.texCoordOne[1] + b * this.texCoordTwo[1]  + c * this.texCoordThree[1];
+	    
+	    return uv;
 	}
 }

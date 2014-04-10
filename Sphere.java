@@ -108,4 +108,14 @@ public class Sphere extends Intersectable
 			
         return intersection;
     }
+    
+    public float[] findUV(Vector3f point)
+    {
+        float[] uv = new float[2];
+        
+        uv[0] = 0.0f;
+        uv[1] = 0.0f;
+        
+        return uv;
+    }
 }

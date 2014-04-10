@@ -7,6 +7,9 @@ public abstract class Intersectable
 	public int id;
 	public Surface surface;
 	
+	public boolean textured;
+	public String textureName;
+	
     /**
      * Computes the time of intersection between any object and a given ray
      * @param ray Ray3f -> Ray to test against.
@@ -20,4 +23,6 @@ public abstract class Intersectable
     }
 	
 	public abstract Vector3f findNormal(Ray3f ray, float time);
+	
+	public abstract float[] findUV(Vector3f point);
 }
