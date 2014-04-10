@@ -613,9 +613,13 @@ Color4f shadePixel(Intersectable object, Ray3f ray, float time)
 Color4f shadePixel(Collision[] collision, Ray3f[] ray)
 {
     Collision shadowCollision = null;
-	Collision reflectionCollision = null;
+	Collision[] reflectionCollision = null;
 	Ray3f shadowRay = null;
-	Ray3f reflectedRay = new Ray3f();
+	Ray3f reflectedRay[] = new Ray3f[3];
+	for(int index = 0; index < 3; index++)
+	{
+	    reflectedRay[index] = new Ray3f();
+	}
 	Color4f pixelColor = new Color4f(collision[0].object.surface.ambient);
 	Color4f addedLight = null;
 	Color4f reflectionColor = null;
@@ -715,7 +719,7 @@ Color4f shadePixel(Collision[] collision, Ray3f[] ray)
 	if(collision[0].object.surface.kRefl > 0.0)
 	{
         //Calculate the direction of the reflected ray.
-        reflectedRay.origin.copy(intersectionPoint);
+        reflectedRay[0].origin.copy(intersectionPoint);
         
         float reflectPartial = 2.0f * normal.dotProduct(inverseDirection);
         reflectionAxis.copy(normal);
@@ -723,14 +727,63 @@ Color4f shadePixel(Collision[] collision, Ray3f[] ray)
         reflectionAxis.add(ray[0].direction);
         reflectionAxis.normalize();
         
-        reflectedRay.direction.copy(reflectionAxis);
+        reflectedRay[0].direction.copy(reflectionAxis);
         
-        reflectionCollision = scene.checkCollisions(reflectedRay, collision[0].object);
+        reflectionCollision = new Collision[3];
+        reflectionCollision[0] = scene.checkCollisions(reflectedRay[0], collision[0].object);
         
-        if(reflectionCollision != null)
+        if(reflectionCollision[0] != null)
         {
-            reflectionColor = shadePixel(reflectionCollision.object, reflectedRay, reflectionCollision.time);
+            if(collision[1] != null && collision[0].object.equals(collision[1].object))
+            {
+                Vector3f temp = ray[1].computeLocationAtTime(collision[1].time);
+                inverseDirection.copy(ray[1].direction);
+                inverseDirection.scale(-1.0f);
+                normal = collision[1].object.findNormal(ray[1], collision[1].time);
+                
+                reflectPartial = 2.0f * normal.dotProduct(inverseDirection);
+                reflectionAxis.copy(normal);
+                reflectionAxis.scale(reflectPartial);
+                reflectionAxis.add(ray[1].direction);
+                reflectionAxis.normalize();
+                
+                reflectedRay[1].origin.copy(temp);
+                reflectedRay[1].direction.copy(reflectionAxis);
+                reflectionCollision[1] = scene.checkCollisions(reflectedRay[1], collision[1].object);
+            }
+            else
+            {
+                reflectedRay[1].origin.copy(reflectedRay[0].origin);
+                reflectedRay[1].direction.copy(reflectedRay[0].direction);
+            }
+            
+            if(collision[2] != null && collision[0].object.equals(collision[2].object))
+            {
+                Vector3f temp = ray[2].computeLocationAtTime(collision[2].time);
+                inverseDirection.copy(ray[2].direction);
+                inverseDirection.scale(-1.0f);
+                normal = collision[2].object.findNormal(ray[2], collision[2].time);
+                
+                reflectPartial = 2.0f * normal.dotProduct(inverseDirection);
+                reflectionAxis.copy(normal);
+                reflectionAxis.scale(reflectPartial);
+                reflectionAxis.add(ray[2].direction);
+                reflectionAxis.normalize();
+                
+                reflectedRay[2].origin.copy(temp);
+                reflectedRay[2].direction.copy(reflectionAxis);
+                reflectionCollision[2] = scene.checkCollisions(reflectedRay[2], collision[2].object);
+            }
+            else
+            {
+                reflectedRay[2].origin.copy(reflectedRay[2].origin);
+                reflectedRay[2].direction.copy(reflectedRay[2].direction);
+            }
+            
+            //System.out.println("Trying reflection");
+            reflectionColor = shadePixel(reflectionCollision, reflectedRay);
             reflectionColor.scale(collision[0].object.surface.kRefl);
+            //System.out.println("Finished Reflection");
             
             pixelColor.add(reflectionColor);
         }
