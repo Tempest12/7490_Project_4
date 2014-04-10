@@ -13,7 +13,7 @@ float[] gmat = new float[16];  // global matrix values
 
 Scene scene;
 ArrayList<ImageTexture> textures = new ArrayList<ImageTexture>();
-
+boolean mipmaps = false;
 
 // Some initializations for the scene.
 
@@ -45,71 +45,141 @@ void keyPressed()
         scene = new Scene(screen_width, screen_height);
         textures = new ArrayList<ImageTexture>();
         interpreter("t01.cli");
-        renderScene();
+        if(mipmaps)
+        {
+            renderSceneMipMaps();
+        }
+        else
+        {
+            renderScene();
+        }
         break;
 
     case '2':  
         scene = new Scene(screen_width, screen_height);
         textures = new ArrayList<ImageTexture>();
         interpreter("t02.cli");
-        renderScene();
+        if(mipmaps)
+        {
+            renderSceneMipMaps();
+        }
+        else
+        {
+            renderScene();
+        }
         break;
 
     case '3':
         scene = new Scene(screen_width, screen_height);  
         textures = new ArrayList<ImageTexture>();
         interpreter("t03.cli"); 
-        renderScene();
+        if(mipmaps)
+        {
+            renderSceneMipMaps();
+        }
+        else
+        {
+            renderScene();
+        }
         break;
 
     case '4':  
         scene = new Scene(screen_width, screen_height);
         textures = new ArrayList<ImageTexture>();
         interpreter("t04.cli");
-        renderScene();
+        if(mipmaps)
+        {
+            renderSceneMipMaps();
+        }
+        else
+        {
+            renderScene();
+        }
         break;
 
     case '5':  
         scene = new Scene(screen_width, screen_height);
         textures = new ArrayList<ImageTexture>();
         interpreter("t05.cli"); 
-        renderScene();
+        if(mipmaps)
+        {
+            renderSceneMipMaps();
+        }
+        else
+        {
+            renderScene();
+        }
         break;
 
     case '6':  
         scene = new Scene(screen_width, screen_height);
         textures = new ArrayList<ImageTexture>();
         interpreter("t06.cli"); 
-        renderScene();
+        if(mipmaps)
+        {
+            renderSceneMipMaps();
+        }
+        else
+        {
+            renderScene();
+        }
         break;
 
     case '7': 
         scene = new Scene(screen_width, screen_height);
         textures = new ArrayList<ImageTexture>();
         interpreter("t07.cli"); 
-        renderScene();
+        if(mipmaps)
+        {
+            renderSceneMipMaps();
+        }
+        else
+        {
+            renderScene();
+        }
         break;
 
     case '8':  
         scene = new Scene(screen_width, screen_height);
         textures = new ArrayList<ImageTexture>();
         interpreter("t08.cli"); 
-        renderScene();
+        if(mipmaps)
+        {
+            renderSceneMipMaps();
+        }
+        else
+        {
+            renderScene();
+        }
         break;
 
-    case '9': 
+    /*case '9': 
         scene = new Scene(screen_width, screen_height);
         textures = new ArrayList<ImageTexture>();
         interpreter("t09.cli"); 
-        renderScene();
+        if(mipmaps)
+        {
+            renderSceneMipMaps();
+        }
+        else
+        {
+            renderScene();
+        }
         break;
 
     case '0':
         scene = new Scene(screen_width, screen_height);
         textures = new ArrayList<ImageTexture>();
         interpreter("t10.cli"); 
-        renderScene();
-        break;
+        if(mipmaps)
+        {
+            renderSceneMipMaps();
+        }
+        else
+        {
+            renderScene();
+        }
+        break;*/
 
     case 'q':  
         exit(); 
@@ -304,6 +374,17 @@ void interpreter(String filename)
         
         texCount++;
     }
+    else if (token[0].equals("mipmap"))
+    {
+        if(token[1].equals("on"))
+        {
+            mipmaps = true;
+        }
+        else
+        {
+            mipmaps = false;
+        }
+    }
   }
 }
 
@@ -362,6 +443,47 @@ void renderScene()
 			if(x == scene.halfWidth && y == scene.halfHeight)
 			{
 				System.out.println(collision);
+			}
+		}
+	}
+
+    setScreen(frameBuffer);
+}
+
+void renderSceneMipMaps()
+{
+    Ray3f[] primaryRay = new Ray3f[3];
+    for(int index = 0; index < primaryRay.length; index++)
+    {
+        primaryRay[index] = new Ray3f();
+    }
+    
+	Intersectable object;
+	Collision[] collision = new Collision[3];
+
+	Color4f[][] frameBuffer = new Color4f[scene.width][scene.height];
+
+	//Shoot Primary rays:
+	for(int x = 0; x < scene.width; x++)
+	{
+		for(int y = 0; y < scene.height; y++)
+		{
+			scene.eyeRay(x, y, primaryRay[0]);
+			scene.eyeRay(x - 1, y, primaryRay[1]);
+			scene.eyeRay(x, y - 1, primaryRay[2]);
+
+			collision[0] = scene.checkCollisions(primaryRay[0], null);
+			
+			if(collision[0] == null)
+			{
+				frameBuffer[x][y] = scene.backgroundColor;
+			}
+			else 
+			{
+			    collision[1] = scene.checkCollisions(primaryRay[1], null);
+			    collision[2] = scene.checkCollisions(primaryRay[2], null);
+			
+				frameBuffer[x][y] = shadePixel(collision, primaryRay);
 			}
 		}
 	}
@@ -488,6 +610,143 @@ Color4f shadePixel(Intersectable object, Ray3f ray, float time)
 	return pixelColor;
 }
 
+Color4f shadePixel(Collision[] collision, Ray3f[] ray)
+{
+    Collision shadowCollision = null;
+	Collision reflectionCollision = null;
+	Ray3f shadowRay = null;
+	Ray3f reflectedRay = new Ray3f();
+	Color4f pixelColor = new Color4f(collision[0].object.surface.ambient);
+	Color4f addedLight = null;
+	Color4f reflectionColor = null;
+	Color4f texel = new Color4f();
+	PointLight light;
+
+	float partial = 0.0f;
+	float specularPartial = 0.0f;
+	
+	Vector3f reflectionAxis = new Vector3f();
+	Vector3f intersectionPoint = ray[0].computeLocationAtTime(collision[0].time);
+	Vector3f directionToLight = new Vector3f();
+	Vector3f directionFromLight = new Vector3f();
+	Vector3f inverseDirection = new Vector3f();
+	Vector3f specularRay = new Vector3f();
+	Vector3f normal = collision[0].object.findNormal(ray[0], collision[0].time);
+	
+	shadowRay = new Ray3f(intersectionPoint);
+	
+	for(int index = 0; index < scene.lights.size(); index++)
+	{
+		light = scene.lights.get(index);
+		
+		directionToLight.copy(light.position);
+		directionToLight.subtract(intersectionPoint);
+		directionToLight.normalize();
+		
+		shadowRay.direction.copy(directionToLight);
+		
+		shadowCollision = scene.checkCollisions(shadowRay, collision[0].object);
+		
+		if(shadowCollision == null)
+		{
+			//Object can see the light:
+			//normal = object.findNormal(ray, time);
+			
+			partial = Math.abs(normal.dotProduct(directionToLight));
+			
+			if(collision[0].object.textured)
+			{
+			    float[] uv = collision[0].object.findUV(intersectionPoint);
+			    float[] uvTwo = uv;
+			    float[] uvThree = uv;
+			    
+			    float maxDistance = 0.0f;
+			    
+			    if(collision[1] != null && collision[0].object.equals(collision[1].object))
+			    {
+			        Vector3f temp = ray[1].computeLocationAtTime(collision[1].time);
+			        uvTwo = collision[1].object.findUV(temp);
+			    }
+			    if(collision[2] != null && collision[0].object.equals(collision[2].object))
+			    {
+			        Vector3f temp = ray[2].computeLocationAtTime(collision[2].time);
+			        uvThree = collision[2].object.findUV(temp);
+			    }
+			    
+			    maxDistance = Math.max(distance(uv, uvTwo), distance(uv, uvThree));
+			    
+			    textureLookUp(collision[0].object, uv[0], uv[1], maxDistance, texel);
+			    addedLight = Color4f.multiplyColors(light.diffuseColor, texel);			    
+			}
+			else
+			{
+			    addedLight = Color4f.multiplyColors(light.diffuseColor, collision[0].object.surface.diffuse);
+			}
+			addedLight.scale(partial);
+			
+			pixelColor.add(addedLight);
+			
+			if(collision[0].object.surface.shiny)
+			{
+			    inverseDirection.copy(ray[0].direction);
+			    
+			    inverseDirection.scale(-1.0f);
+			    
+			    specularRay.copy(directionToLight);
+			    specularRay.add(inverseDirection);
+			    specularRay.normalize();
+			    
+			    specularPartial = Math.abs(normal.dotProduct(specularRay));
+			    specularPartial = (float)Math.pow(specularPartial, collision[0].object.surface.phongExp);
+			    
+			    addedLight = Color4f.multiplyColors(collision[0].object.surface.specular, light.diffuseColor);
+			    addedLight.scale(specularPartial);
+			    
+			    pixelColor.add(addedLight);
+			}				
+		}
+		else 
+		{
+			//Object is in Shadow.
+			continue;
+		}
+	}
+	
+	if(collision[0].object.surface.kRefl > 0.0)
+	{
+        //Calculate the direction of the reflected ray.
+        reflectedRay.origin.copy(intersectionPoint);
+        
+        float reflectPartial = 2.0f * normal.dotProduct(inverseDirection);
+        reflectionAxis.copy(normal);
+        reflectionAxis.scale(reflectPartial);
+        reflectionAxis.add(ray[0].direction);
+        reflectionAxis.normalize();
+        
+        reflectedRay.direction.copy(reflectionAxis);
+        
+        reflectionCollision = scene.checkCollisions(reflectedRay, collision[0].object);
+        
+        if(reflectionCollision != null)
+        {
+            reflectionColor = shadePixel(reflectionCollision.object, reflectedRay, reflectionCollision.time);
+            reflectionColor.scale(collision[0].object.surface.kRefl);
+            
+            pixelColor.add(reflectionColor);
+        }
+        else
+        {
+            reflectionColor = new Color4f(scene.backgroundColor);
+            reflectionColor.scale(collision[0].object.surface.kRefl);
+            
+            pixelColor.add(reflectionColor);
+        }
+        
+    }
+	
+	return pixelColor;
+}
+
 void textureLookUp(Intersectable object, float u, float v, float w, Color4f output)
 {
     for(int index = 0; index < textures.size(); index++)
@@ -503,4 +762,26 @@ void textureLookUp(Intersectable object, float u, float v, float w, Color4f outp
     }
 
     //System.out.println("Error! Texture: \"" + object.textureName + "\" not found.");
+}
+
+float distance(float uOne, float vOne, float uTwo, float vTwo)
+{
+    float u = uOne - uTwo;
+    float v = vOne - vTwo;
+    
+    u *= u;
+    v *= v;
+    
+    return (float)Math.sqrt(u + v);
+}
+
+float distance(float[] one, float[] two)
+{
+    float u = one[0] - two[0];
+    float v = one[1] - two[1];
+    
+    u *= u;
+    v *= v;
+    
+    return (float)Math.sqrt(u + v);
 }
