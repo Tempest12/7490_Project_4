@@ -224,8 +224,15 @@ void interpreter(String filename)
 		
 		ctm.mult(vector, target);
 		
-        //scene.addSphere(Float.parseFloat(token[1]), Float.parseFloat(token[2]), Float.parseFloat(token[3]), Float.parseFloat(token[4]));  
-		scene.addSphere(Float.parseFloat(token[1]), target.x, target.y, target.z);
+        //scene.addSphere(Float.parseFloat(token[1]), Float.parseFloat(token[2]), Float.parseFloat(token[3]), Float.parseFloat(token[4]));
+        if(textured)
+        {
+            scene.addTexturedSphere(Float.parseFloat(token[1]), target.x, target.y, target.z); 
+        }
+        else
+        {  
+		    scene.addSphere(Float.parseFloat(token[1]), target.x, target.y, target.z);
+		}
     }
     else if (token[0].equals("push"))
     {
@@ -383,7 +390,7 @@ Color4f shadePixel(Intersectable object, Ray3f ray, float time)
 	Vector3f directionFromLight = new Vector3f();
 	Vector3f inverseDirection = new Vector3f();
 	Vector3f specularRay = new Vector3f();
-	Vector3f normal;
+	Vector3f normal = object.findNormal(ray, time);
 	
 	shadowRay = new Ray3f(intersectionPoint);
 	
@@ -402,7 +409,7 @@ Color4f shadePixel(Intersectable object, Ray3f ray, float time)
 		if(collision == null)
 		{
 			//Object can see the light:
-			normal = object.findNormal(ray, time);
+			//normal = object.findNormal(ray, time);
 			
 			partial = Math.abs(normal.dotProduct(directionToLight));
 			
@@ -437,31 +444,6 @@ Color4f shadePixel(Intersectable object, Ray3f ray, float time)
 			    addedLight.scale(specularPartial);
 			    
 			    pixelColor.add(addedLight);
-			    
-			    if(object.surface.kRefl > 0.0)
-			    {
-			        //Calculate the direction of the reflected ray.
-			        reflectedRay.origin.copy(intersectionPoint);
-			        
-			        float reflectPartial = 2.0f * normal.dotProduct(inverseDirection);
-			        reflectionAxis.copy(normal);
-			        reflectionAxis.scale(reflectPartial);
-			        reflectionAxis.add(ray.direction);
-			        reflectionAxis.normalize();
-			        
-			        reflectedRay.direction.copy(reflectionAxis);
-			        
-			        reflectionCollision = scene.checkCollisions(reflectedRay, object);
-			        
-			        if(reflectionCollision != null)
-			        {
-			            reflectionColor = shadePixel(reflectionCollision.object, reflectedRay, reflectionCollision.time);
-			            reflectionColor.scale(object.surface.kRefl);
-			            
-			            pixelColor.add(reflectionColor);
-			        }
-			        
-			    }
 			}				
 		}
 		else 
@@ -470,6 +452,38 @@ Color4f shadePixel(Intersectable object, Ray3f ray, float time)
 			continue;
 		}
 	}
+	
+	if(object.surface.kRefl > 0.0)
+	{
+        //Calculate the direction of the reflected ray.
+        reflectedRay.origin.copy(intersectionPoint);
+        
+        float reflectPartial = 2.0f * normal.dotProduct(inverseDirection);
+        reflectionAxis.copy(normal);
+        reflectionAxis.scale(reflectPartial);
+        reflectionAxis.add(ray.direction);
+        reflectionAxis.normalize();
+        
+        reflectedRay.direction.copy(reflectionAxis);
+        
+        reflectionCollision = scene.checkCollisions(reflectedRay, object);
+        
+        if(reflectionCollision != null)
+        {
+            reflectionColor = shadePixel(reflectionCollision.object, reflectedRay, reflectionCollision.time);
+            reflectionColor.scale(object.surface.kRefl);
+            
+            pixelColor.add(reflectionColor);
+        }
+        else
+        {
+            reflectionColor = new Color4f(scene.backgroundColor);
+            reflectionColor.scale(object.surface.kRefl);
+            
+            pixelColor.add(reflectionColor);
+        }
+        
+    }
 	
 	return pixelColor;
 }

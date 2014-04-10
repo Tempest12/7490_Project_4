@@ -24,6 +24,23 @@ public class Sphere extends Intersectable
         this.radius = radius;
 
         this.surface = surface;
+        
+        this.textured = false;
+    }
+
+    public Sphere(int id, float x, float y, float z, float radius, Surface surface, String textureName)
+    {
+        this.id = id;
+
+        this.position = new Vector3f(x, y, z);
+
+        this.radius = radius;
+
+        this.surface = surface;
+        
+        this.textured = true;
+        
+        this.textureName = textureName;
     }
 
     /**
@@ -113,8 +130,14 @@ public class Sphere extends Intersectable
     {
         float[] uv = new float[2];
         
-        uv[0] = 0.0f;
-        uv[1] = 0.0f;
+        Vector3f prime = new Vector3f(point);
+        prime.subtract(this.position);
+        
+        float phi = (float)Math.atan2(prime.y, prime.x);
+        float theta = (float)Math.acos(prime.z / this.radius);
+        
+        uv[0] = 1.0f - (float)((phi + Math.PI)/(2.0f * Math.PI));
+        uv[1] = (float)(theta / Math.PI);
         
         return uv;
     }

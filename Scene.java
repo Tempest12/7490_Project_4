@@ -66,6 +66,12 @@ public class Scene
 		this.idCounter++;
 	}
 
+    public void addTexturedSphere(float radius, float x, float y, float z)
+	{
+		this.objects.add(new Sphere(this.idCounter, x, y, z, radius, lastSurface, currentTexture));
+		this.idCounter++;
+	}
+
 	public Collision checkCollisions(Ray3f ray, Intersectable ignore)
 	{
 		Intersectable object = null;
