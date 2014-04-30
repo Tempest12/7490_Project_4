@@ -69,6 +69,19 @@ public class Vector3f
         return (float)Math.sqrt((x * x) + (y * y) + (z * z));
     }
     
+    public float distance(Vector3f that)
+    {
+        float xDelta = this.x - that.x;
+        float yDelta = this.y - that.y;
+        float zDelta = this.z - that.z;
+
+        xDelta *= xDelta;
+        yDelta *= yDelta;
+        zDelta *= zDelta;
+    
+        return (float)Math.sqrt(xDelta + yDelta + zDelta);
+    }
+    
     /**
      * Returns the magnitude of the Vector Squared
      * @return float - square of the vector magnitude

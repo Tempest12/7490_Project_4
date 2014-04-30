@@ -83,6 +83,14 @@ public class Scene
 		this.idCounter++;
 	}
 
+    public void addStoneSphere(float radius, float x, float y, float z)
+    {
+        Sphere sphere = new Sphere(this.idCounter, x, y, z, radius, lastSurface);
+        sphere.stone = true;
+        this.objects.add(sphere);
+        this.idCounter++;
+    }
+
     public void addTexturedSphere(float radius, float x, float y, float z)
 	{
 		this.objects.add(new Sphere(this.idCounter, x, y, z, radius, lastSurface, currentTexture));

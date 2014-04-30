@@ -1,8 +1,10 @@
+import java.util.Random;
 ///////////////////////////////////////////////////////////////////////
 //
 //  Ray Tracing Shell
 //
 ///////////////////////////////////////////////////////////////////////
+
 
 int screen_width = 600;
 int screen_height = 600;
@@ -12,6 +14,7 @@ PMatrix3D global_mat;
 float[] gmat = new float[16];  // global matrix values
 
 Scene scene;
+GridManager gridManager = new GridManager(0.65f, 50, 0.01f);
 ArrayList<ImageTexture> textures = new ArrayList<ImageTexture>();
 boolean mipmaps = false;
 
@@ -19,10 +22,13 @@ boolean mipmaps = false;
 boolean noise;
 boolean wood;
 boolean marble;
-boolean worley;
+boolean stone;
 
 float noiseScale;
 float marbleScale = 1.0f;
+float stoneScale = 20.0f;
+
+Random random;
 
 void setup() {
    scene = new Scene(screen_width, screen_height);
@@ -322,6 +328,12 @@ void interpreter(String filename)
             scene.addMarbleSphere(Float.parseFloat(token[1]), target.x, target.y, target.z, marbleScale);
             marble = false;
         }
+        else if(stone)
+        {
+            //System.out.print(gridManager);
+            scene.addStoneSphere(Float.parseFloat(token[1]), target.x, target.y, target.z);
+            stone = false;
+        }
         else
         {  
 		    scene.addSphere(Float.parseFloat(token[1]), target.x, target.y, target.z);
@@ -427,6 +439,10 @@ void interpreter(String filename)
         println("Pixel Size: " + pixelSize);
         
         marble = true;
+    }
+    else if (token[0].equals("stone"))
+    {
+        stone = true;
     }   
   }
 }
@@ -455,11 +471,13 @@ void setScreen(Color4f[][] screen)
     }
 
     updatePixels();
-    //save("wood.png"); 
+    //save("Nextclosest.png"); 
 }
 
 void renderScene()
 {
+    System.out.println("Beginning to render scene.");
+
     Ray3f primaryRay = new Ray3f();
 	Intersectable object;
 	Collision collision = null;
@@ -491,6 +509,7 @@ void renderScene()
 		}
 	}
 
+    System.out.println("Finsihed rendering scene.");
     setScreen(frameBuffer);
 }
 
@@ -561,6 +580,13 @@ Color4f shadePixel(Intersectable object, Ray3f ray, float time)
 	
 	shadowRay = new Ray3f(intersectionPoint);
 	
+	if(object.stone)
+	{
+	    pixelColor.red += noise_3d(intersectionPoint.x * stoneScale, intersectionPoint.y * stoneScale, intersectionPoint.z * stoneScale) * 0.05f;
+	    pixelColor.green += noise_3d(intersectionPoint.x * stoneScale, intersectionPoint.y * stoneScale, intersectionPoint.z * stoneScale) * 0.05f;
+	    pixelColor.blue += noise_3d(intersectionPoint.x * stoneScale, intersectionPoint.y * stoneScale, intersectionPoint.z * stoneScale) * 0.05f;
+	}
+	
 	for(int index = 0; index < scene.lights.size(); index++)
 	{
 		light = scene.lights.get(index);
@@ -621,17 +647,15 @@ Color4f shadePixel(Intersectable object, Ray3f ray, float time)
 			else if(object.marble)
 			{
 			    float noiseValue = turbulence(intersectionPoint, object.noiseScale);
-			    if(once)
-			    {
-    			    println("Turb: " + noiseValue);
-			        once = false;
-			    }
-			    //noiseValue += 1;
-			    //noiseValue /= 2.0f;
 			    Color4f noiseColor = new Color4f(object.surface.diffuse);
 			    noiseColor.scale(noiseValue);
          
 			    addedLight = Color4f.multiplyColors(light.diffuseColor, noiseColor);
+			}
+			else if(object.stone)
+			{
+			    Color4f stoneColor = gridManager.getColor(intersectionPoint);			    
+    	        addedLight = Color4f.multiplyColors(light.diffuseColor, stoneColor);   
 			}
 			else
 			{

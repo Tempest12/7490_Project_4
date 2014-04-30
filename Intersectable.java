@@ -13,7 +13,7 @@ public abstract class Intersectable
 	public boolean noise;	
 	public boolean wood;
 	public boolean marble;
-	public boolean worley;
+	public boolean stone;
 	
 	public float noiseScale;
 	
@@ -58,5 +58,10 @@ public abstract class Intersectable
 	    this.marble = true;
 	    this.surface.diffuse.set(-1.0f, -0.5f, -0.8f);
 	    this.surface.ambient.set(0.55f, 0.55f, 0.55f); 
+	}
+	
+	public void setStone()
+	{
+	    this.stone = true;
 	}
 }
