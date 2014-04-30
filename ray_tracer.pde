@@ -22,6 +22,7 @@ boolean marble;
 boolean worley;
 
 float noiseScale;
+float marbleScale = 1.0f;
 
 void setup() {
    scene = new Scene(screen_width, screen_height);
@@ -316,6 +317,11 @@ void interpreter(String filename)
             scene.addWoodSphere(Float.parseFloat(token[1]), target.x, target.y, target.z);
             wood = false;
         }
+        else if(marble)
+        {
+            scene.addMarbleSphere(Float.parseFloat(token[1]), target.x, target.y, target.z, marbleScale);
+            marble = false;
+        }
         else
         {  
 		    scene.addSphere(Float.parseFloat(token[1]), target.x, target.y, target.z);
@@ -411,6 +417,17 @@ void interpreter(String filename)
     {
         wood = true;
     }
+    else if (token[0].equals("marble"))
+    {
+        float pixelSize = tan(radians(scene.fov) / 2.0f);
+        pixelSize /= (screen_width / 2.0f);
+    
+        initTurblence(pixelSize);
+        
+        println("Pixel Size: " + pixelSize);
+        
+        marble = true;
+    }   
   }
 }
 
@@ -438,6 +455,7 @@ void setScreen(Color4f[][] screen)
     }
 
     updatePixels();
+    //save("wood.png"); 
 }
 
 void renderScene()
@@ -517,6 +535,7 @@ void renderSceneMipMaps()
     setScreen(frameBuffer);
 }
 
+boolean once = true;
 Color4f shadePixel(Intersectable object, Ray3f ray, float time)
 {
     Collision collision = null;
@@ -579,9 +598,10 @@ Color4f shadePixel(Intersectable object, Ray3f ray, float time)
 			}
 			else if(object.wood)
 			{
-			    float yFactor = 0.0f;
+			    float yFactor = 0.8f * noise_3d(intersectionPoint.y, 0.0f, 0.0f);
 			    float noiseValue = noise_3d(intersectionPoint.x * object.noiseScale + intersectionPoint.y * object.noiseScale * yFactor, 0.0f, 0.0f);
-			    float woodValue = noise_3d(intersectionPoint.x * object.woodScale + intersectionPoint.y * object.noiseScale * yFactor, 0.0f, 0.0f);
+			    //yFactor *= -1.0f;
+			    float woodValue = noise_3d(intersectionPoint.x * object.woodScale + intersectionPoint.y * object.woodScale * yFactor, 0.0f, 0.0f);
 			    //float woodValue = noise_3d(0.0f, 0.0f, intersectionPoint.z * object.woodScale + intersectionPoint.y * object.noiseScale * yFactor);
 			    noiseValue += 1;
 			    noiseValue /= 2.2f;
@@ -595,6 +615,21 @@ Color4f shadePixel(Intersectable object, Ray3f ray, float time)
                 woodColor.scale(woodValue);
                 
                 noiseColor.add(woodColor);
+         
+			    addedLight = Color4f.multiplyColors(light.diffuseColor, noiseColor);
+			}
+			else if(object.marble)
+			{
+			    float noiseValue = turbulence(intersectionPoint, object.noiseScale);
+			    if(once)
+			    {
+    			    println("Turb: " + noiseValue);
+			        once = false;
+			    }
+			    //noiseValue += 1;
+			    //noiseValue /= 2.0f;
+			    Color4f noiseColor = new Color4f(object.surface.diffuse);
+			    noiseColor.scale(noiseValue);
          
 			    addedLight = Color4f.multiplyColors(light.diffuseColor, noiseColor);
 			}

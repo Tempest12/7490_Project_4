@@ -117,5 +117,21 @@ double fade(double t) {
   return t*t*t*(t*(t*6-15)+10);
 }
 
+void initTurblence(float size)
+{
+    pixelSize = size;    
+}
 
+float pixelSize = 0.0f;
+float turbulence(Vector3f point, float scale)
+{
+    float turb = 0.0f;
+    while(scale > pixelSize)
+    {
+        turb += abs(noise_3d(point.x / scale, point.y / scale, point.z / scale) * scale);
+        scale *= 0.5f;
+    }
+    
+    return turb;
+}
 

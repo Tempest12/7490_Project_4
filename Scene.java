@@ -55,6 +55,15 @@ public class Scene
 	    this.idCounter++;
 	}
 
+    public void addMarbleSphere(float radius, float x, float y, float z, float noiseScale)
+    {
+        Sphere sphere = new Sphere(this.idCounter, x, y, z, radius, lastSurface);
+        sphere.setMarble();
+        sphere.noiseScale = noiseScale;
+        this.objects.add(sphere);
+        this.idCounter++;
+    }
+
     public void addNoiseSphere(float radius, float x, float y, float z, float noiseScale)
     {
         Sphere sphere = new Sphere(this.idCounter, x, y, z, radius, lastSurface);
@@ -144,9 +153,9 @@ public class Scene
 
           if(x == 34 && y == 34)
           {
-             System.out.println(ray.direction.toString());
+             //System.out.println(ray.direction.toString());
 	         
-	         System.out.println(k);
+	         //System.out.println(k);
           }
 	}
 

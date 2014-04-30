@@ -52,4 +52,11 @@ public abstract class Intersectable
 	    this.noiseScale = 8.0f;
 	    this.woodScale = 10.0f;
 	}
+	
+	public void setMarble()
+	{
+	    this.marble = true;
+	    this.surface.diffuse.set(-1.0f, -0.5f, -0.8f);
+	    this.surface.ambient.set(0.55f, 0.55f, 0.55f); 
+	}
 }
