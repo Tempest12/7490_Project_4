@@ -1,5 +1,4 @@
 // Classic Perlin noise, 3D version
-
 float noise_3d(float x, float y, float z) {
   
   // make sure we've initilized table

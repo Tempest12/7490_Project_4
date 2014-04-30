@@ -16,6 +16,12 @@ ArrayList<ImageTexture> textures = new ArrayList<ImageTexture>();
 boolean mipmaps = false;
 
 // Some initializations for the scene.
+boolean noise;
+boolean wood;
+boolean marble;
+boolean worley;
+
+float noiseScale;
 
 void setup() {
    scene = new Scene(screen_width, screen_height);
@@ -299,6 +305,17 @@ void interpreter(String filename)
         {
             scene.addTexturedSphere(Float.parseFloat(token[1]), target.x, target.y, target.z); 
         }
+        else if(noise)
+        {
+            scene.addNoiseSphere(Float.parseFloat(token[1]), target.x, target.y, target.z, noiseScale);
+            noise = false;
+            noiseScale = 0.0f;
+        }
+        else if(wood)
+        {
+            scene.addWoodSphere(Float.parseFloat(token[1]), target.x, target.y, target.z);
+            wood = false;
+        }
         else
         {  
 		    scene.addSphere(Float.parseFloat(token[1]), target.x, target.y, target.z);
@@ -384,6 +401,15 @@ void interpreter(String filename)
         {
             mipmaps = false;
         }
+    }
+    else if (token[0].equals("noise"))
+    {
+        noise = true;
+        noiseScale = Float.parseFloat(token[1]);
+    }
+    else if (token[0].equals("wood"))
+    {
+        wood = true;
     }
   }
 }
@@ -541,6 +567,37 @@ Color4f shadePixel(Intersectable object, Ray3f ray, float time)
 			    textureLookUp(object, uv[0], uv[1], 0.0f, texel);
 			    addedLight = Color4f.multiplyColors(light.diffuseColor, texel);			    
 			}
+			else if(object.noise)
+			{
+			    float noiseValue = noise_3d(intersectionPoint.x * object.noiseScale, intersectionPoint.y * object.noiseScale, intersectionPoint.z * object.noiseScale);
+			    noiseValue += 1;
+			    noiseValue /= 2.0f;
+			    Color4f noiseColor = new Color4f(object.surface.diffuse);
+			    noiseColor.scale(noiseValue);
+         
+			    addedLight = Color4f.multiplyColors(light.diffuseColor, noiseColor);
+			}
+			else if(object.wood)
+			{
+			    float yFactor = 0.0f;
+			    float noiseValue = noise_3d(intersectionPoint.x * object.noiseScale + intersectionPoint.y * object.noiseScale * yFactor, 0.0f, 0.0f);
+			    float woodValue = noise_3d(intersectionPoint.x * object.woodScale + intersectionPoint.y * object.noiseScale * yFactor, 0.0f, 0.0f);
+			    //float woodValue = noise_3d(0.0f, 0.0f, intersectionPoint.z * object.woodScale + intersectionPoint.y * object.noiseScale * yFactor);
+			    noiseValue += 1;
+			    noiseValue /= 2.2f;
+			    woodValue += 1;
+			    woodValue /= 2.2f;
+			    
+			    Color4f noiseColor = new Color4f(object.surface.diffuse);
+			    noiseColor.scale(noiseValue);
+         
+                Color4f woodColor = new Color4f(object.woodColor);
+                woodColor.scale(woodValue);
+                
+                noiseColor.add(woodColor);
+         
+			    addedLight = Color4f.multiplyColors(light.diffuseColor, noiseColor);
+			}
 			else
 			{
 			    addedLight = Color4f.multiplyColors(light.diffuseColor, object.surface.diffuse);
@@ -607,7 +664,14 @@ Color4f shadePixel(Intersectable object, Ray3f ray, float time)
         
     }
 	
-	return pixelColor;
+	/*if(object.noise)
+	{
+	    intersectionPoint.scale(object.noiseScale);
+	    float noiseValue = noise_3d(intersectionPoint.x, intersectionPoint.y, intersectionPoint.z);
+	    pixelColor.scale(noiseValue);
+	}*/
+ 
+    return pixelColor;
 }
 
 Color4f shadePixel(Collision[] collision, Ray3f[] ray)

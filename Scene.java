@@ -55,6 +55,14 @@ public class Scene
 	    this.idCounter++;
 	}
 
+    public void addNoiseSphere(float radius, float x, float y, float z, float noiseScale)
+    {
+        Sphere sphere = new Sphere(this.idCounter, x, y, z, radius, lastSurface);
+        sphere.setNoise(noiseScale);
+        this.objects.add(sphere);
+        this.idCounter++;
+    }
+
 	public void addPointLight(float x, float y, float z, float red, float green, float blue)
 	{
 		this.lights.add(new PointLight(x, y, z, red, green, blue, 1.0f));
@@ -71,6 +79,14 @@ public class Scene
 		this.objects.add(new Sphere(this.idCounter, x, y, z, radius, lastSurface, currentTexture));
 		this.idCounter++;
 	}
+
+    public void addWoodSphere(float radius, float x, float y, float z)
+    {
+        Sphere sphere = new Sphere(this.idCounter, x, y, z, radius, lastSurface);
+        sphere.setWood();
+        this.objects.add(sphere);
+        this.idCounter++;
+    }
 
 	public Collision checkCollisions(Ray3f ray, Intersectable ignore)
 	{
